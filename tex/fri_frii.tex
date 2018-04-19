@@ -1,0 +1,134 @@
+\documentclass{article}
+
+\usepackage{amssymb}
+\usepackage[margin=1cm]{geometry}
+\usepackage{tikz}
+\usetikzlibrary{arrows,fit,positioning,shapes,calc}
+\usepackage{hyperref}
+
+\title{Design document for FR-I and FR-II classification demo}
+\author{Matthew Alger, Julie Banfield and Cheng Soon Ong}
+\date{19 April 2018} % without \date command, current date is supplied
+
+
+
+%%%%%%%%%%%%%%
+% Tikz style
+%%%%%%%%%%%%%%
+
+%-----#1 name of the node, #2 relative location, #3 other node, #4 label
+\def\mlsystem[#1,#2,#3]#4;{
+  \node[draw, align=left, name=#1, #2 = of #3, color=blue,fill=white,rounded corners=3] {#4};
+}
+
+%-----#1 name of the node, #2 relative location, #3 other node, #4 label
+\def\lib[#1,#2,#3]#4;{
+  \node[draw, name=#1, #2 = of #3, color=red,fill=white,rounded corners=3] {#4};
+}
+
+%-----#1 name of the node, #2 relative location, #3 other node, #4 label
+\def\web[#1,#2,#3]#4;{
+  \node[draw, name=#1, #2 = of #3, color=black,fill=blue!30] {#4};
+}
+
+%-----#1 name of the node, #2 relative location, #3 other node, #4 label
+\def\csv[#1,#2,#3]#4;{
+  \node[draw, name=#1, #2 = of #3, color=black,fill=gray,minimum height=50] {#4};
+}
+
+
+%-----database
+%-----#1 height, #2 width, #3 aspect, #4 name of the node,
+%-----#5 coordinate, #6 label
+\def\database[#1,#2,#3,#4,#5]#6{%
+  \node[draw, cylinder, alias=cyl, shape border rotate=90, aspect=#3, %
+  minimum height=#1, minimum width=#2, outer sep=-0.5\pgflinewidth, %
+  color=orange!40!black, left color=orange!70, right color=orange!80, middle
+  color=white] (#4) at #5 {};%
+  \node at #5 {#6};%
+  \fill [orange!30] let \p1 = ($(cyl.before top)!0.5!(cyl.after top)$), \p2 =
+  (cyl.top), \p3 = (cyl.before top), \n1={veclen(\x3-\x1,\y3-\y1)},
+  \n2={veclen(\x2-\x1,\y2-\y1)} in (\p1) ellipse (\n1 and \n2); }
+
+%------dataflow
+%------#1 source, #2 target, #3 bend left or right
+%------#4 label
+\def\dataflow[#1,#2,#3]#4{%
+  \path (#1) edge[->, thick, shorten <=2pt, shorten >=2pt, bend #3] node [left] {#4} (#2);
+}
+
+%------todo
+%------#1 source, #2 target, #3 bend left or right
+%------#4 label
+\def\todoflow[#1,#2,#3]#4{%
+  \path (#1) edge[color=red, ->, thick, shorten <=2pt, shorten >=2pt, %
+  bend #3] node [right] {#4} (#2);
+}
+
+
+\begin{document}
+
+\maketitle
+
+\begin{center}
+  \begin{tikzpicture}
+    \database[60,50,1.6,db,(0,0)] {\begin{tabular}{c}FIRST\\TGSS\end{tabular}};
+    \mlsystem[pred,below,db] {\begin{tabular}{c}
+      {\bf Predictor}\\$f_I:\quad$component$\to[0,1]$\\$f_{II}:\quad$component$\to[0,1]$\\
+      component = $\mathbb{R}^d\in$Features
+    \end{tabular}};
+    \mlsystem[rec,left,db] {\begin{tabular}{c}
+      {\bf Recommender}\\$r:\quad$component$\to\mathbb{R}$\\
+      component = $[0,1]^2$ prediction
+    \end{tabular}};
+    \lib[fetch,above,db] {\begin{tabular}{c}
+      {\bf Image retriever}\\$g:\quad$component$\to$subject\\
+      component = FIRST index
+    \end{tabular}};
+    \csv[features,right,db] {Features};
+    \web[zoo,above right,features] {\begin{tabular}{c}
+      {\bf Label with Zooniverse}\\
+      subjects$\to$classifications
+    \end{tabular}};
+
+    \todoflow[db,fetch,left] {};
+    \todoflow[rec,fetch,left] {};
+    \todoflow[fetch,zoo,left] {};
+    \todoflow[zoo,features,left] {};
+    \todoflow[zoo,pred,left] {Callback or trigger};
+    \todoflow[db,fetch,left] {};
+    \dataflow[db,features,left] {};
+    \dataflow[pred,rec,left] {};
+    \dataflow[features,pred,left] {};
+  \end{tikzpicture}
+\end{center}
+
+Notes about the figure:
+\begin{itemize}
+  \item Suggest using a numerical index, which is implicit in the diagram above.
+  \item ``component'' has different meanings in different scripts
+  \item ``subject'' is the zooniverse subject
+\end{itemize}
+
+Workflow, beginning at the database (cylinder in the middle):
+\begin{enumerate}
+  \item Construct a set of features using\\ \url{https://github.com/jbanfield/broome/blob/master/nearest_neighbour.ipynb}
+  \item Seed with a small set of labels
+  \item Construct two classifiers using \texttt{acton}:
+    \begin{itemize}
+      \item FR-I vs all other objects
+      \item FR-II vs all other objects
+    \end{itemize}
+  \item Apply both classifiers to all unlabelled features
+  \item Use the recommender from \texttt{acton} to construct a score,
+    and choose a small number of components (say 10) to get labelled.
+  \item Get images from FIRST and TGSS of the small number of components,
+    and upload to zooniverse.
+  \item Querying FIRST images and catalogue.\\ \url{https://github.com/MatthewJA/ask-first/blob/master/ask_first/__init__.py}\\
+  \url{https://github.com/MatthewJA/second/blob/master/get_data.py}
+  \item Once labelled, add labels to the feature file
+  \item Trigger a re-training of the predictors and the whole cycle.
+\end{enumerate}
+
+
+\end{document}

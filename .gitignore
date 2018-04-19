@@ -1,3 +1,23 @@
+# LaTeX
+*.aux
+*.ilg
+*.ind
+*.idx
+*.bbl
+*.blg
+*.brf
+*.fdb_latexmk
+*.fls
+*.loc
+*.lof
+*.log
+*.lot
+*.out
+*.synctex
+*.synctex.gz
+*.toc
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
