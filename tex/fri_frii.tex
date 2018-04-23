@@ -8,7 +8,7 @@
 
 \title{Design document for FR-I and FR-II classification demo}
 \author{Matthew Alger, Julie Banfield and Cheng Soon Ong}
-\date{19 April 2018} % without \date command, current date is supplied
+\date{23 April 2018} % without \date command, current date is supplied
 
 
 
@@ -65,7 +65,6 @@
   bend #3] node [right] {#4} (#2);
 }
 
-
 \begin{document}
 
 \maketitle
@@ -87,13 +86,15 @@
     \end{tabular}};
     \csv[features,right,db] {Features};
     \web[zoo,above right,features] {\begin{tabular}{c}
-      {\bf Label with Zooniverse}\\
+      {\bf Label with new Django frontend}\\
+      (simulating Label with Zooniverse)\\
       subjects$\to$classifications
     \end{tabular}};
 
     \todoflow[db,fetch,left] {};
     \todoflow[rec,fetch,left] {};
     \todoflow[fetch,zoo,left] {};
+    \todoflow[zoo,rec,right] {Callback or trigger};
     \todoflow[zoo,features,left] {};
     \todoflow[zoo,pred,left] {Callback or trigger};
     \todoflow[db,fetch,left] {};
